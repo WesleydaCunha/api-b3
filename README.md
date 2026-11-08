@@ -45,8 +45,6 @@ Depois configure em **Render → Settings → Environment** (e no `.env` local):
 Veja o `.env.example` na raiz. As tabelas são criadas automaticamente pelo app (`CREATE TABLE IF NOT EXISTS`) quando o banco está vazio.
 
 ### Povoando os dados
-```bash
-cd src
-python updateValues.py
-```
-Faz o scraping dos tickers (StatusInvest) e das cryptos (CoinRanking, exige `API_KEY`). Com as variáveis do Turso configuradas, os dados vão direto para o banco na nuvem.
+- **Rápido (exemplos):** `python seed_sample.py` (rodar da raiz). Insere alguns tickers/cryptos de exemplo para validar os endpoints, sem raspar a web.
+- **Completo (scraping real):** `cd src && python updateValues.py` — faz o scraping completo no StatusInvest e CoinRanking (precisa das variáveis `TURSO_*` e `API_KEY` no `.env`; pode levar alguns minutos pois visita centenas de páginas).
+- Com as variáveis do Turso configuradas, os dados vão direto para o banco na nuvem.

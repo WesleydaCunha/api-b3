@@ -5,6 +5,9 @@ import requests
 from bs4 import BeautifulSoup
 from get_data_internet import getAllValuesFiis, getAllValuesStocks, getAllValuesEtfs, getAllValuesBdrs
 
+session = requests.Session()
+session.headers.update({"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"})
+
 totalLengthStocks = len(stocks) + len(fiis) + len(bdrs) + len(etfs)
 totalStocks = stocks
 totalStocks = numpy.append(totalStocks, fiis)
@@ -17,7 +20,7 @@ for x in range(1, totalLengthStocks):
     typeStock = totalStocks[x]
     if typeStock in stocks:
 
-        url = requests.get(
+        url = session.get(
             f"https://statusinvest.com.br/acoes/{typeStock}")
         nav = BeautifulSoup(url.text, "html5lib")
 
@@ -26,7 +29,7 @@ for x in range(1, totalLengthStocks):
 
     elif typeStock in fiis:
 
-        url = requests.get(
+        url = session.get(
             f"https://statusinvest.com.br/fundos-imobiliarios/{typeStock}")
         nav = BeautifulSoup(url.text, "html5lib")
 
@@ -34,7 +37,7 @@ for x in range(1, totalLengthStocks):
         print(f"Atualizando o fundo: {typeStock}")
 
     elif typeStock in etfs:
-        url = requests.get(
+        url = session.get(
             f"https://statusinvest.com.br/etfs/{typeStock}")
         nav = BeautifulSoup(url.text, "html5lib")
 
@@ -42,7 +45,7 @@ for x in range(1, totalLengthStocks):
         print(f"Atualizando o ETF: {typeStock}")
 
     else:
-        url = requests.get(
+        url = session.get(
             f"https://statusinvest.com.br/bdrs/{typeStock}")
         nav = BeautifulSoup(url.text, "html5lib")
 

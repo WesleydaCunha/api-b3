@@ -9,6 +9,14 @@ portanto o restante do código não precisa saber quem está por trás.
 """
 import os
 
+try:
+    from dotenv import load_dotenv
+
+    # Procura o .env subindo as pastas (funciona tanto da raiz quanto de src/)
+    load_dotenv()
+except Exception:
+    pass
+
 
 def connect_db(db_path: str):
     """Abre conexão: remoto (Turso) quando configurado, senão local."""
