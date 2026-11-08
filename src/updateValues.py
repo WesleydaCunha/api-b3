@@ -18,36 +18,39 @@ print("Rodando dnv")
 updateCryptos()
 for x in range(1, totalLengthStocks):
     typeStock = totalStocks[x]
-    if typeStock in stocks:
+    try:
+        if typeStock in stocks:
 
-        url = session.get(
-            f"https://statusinvest.com.br/acoes/{typeStock}")
-        nav = BeautifulSoup(url.text, "html5lib")
+            url = session.get(
+                f"https://statusinvest.com.br/acoes/{typeStock}", timeout=20)
+            nav = BeautifulSoup(url.text, "html5lib")
 
-        infoAction = getAllValuesStocks(nav, stocks[x].upper())
-        print(f"Atualizando a ação: {typeStock}")
+            infoAction = getAllValuesStocks(nav, stocks[x].upper())
+            print(f"Atualizando a ação: {typeStock}")
 
-    elif typeStock in fiis:
+        elif typeStock in fiis:
 
-        url = session.get(
-            f"https://statusinvest.com.br/fundos-imobiliarios/{typeStock}")
-        nav = BeautifulSoup(url.text, "html5lib")
+            url = session.get(
+                f"https://statusinvest.com.br/fundos-imobiliarios/{typeStock}", timeout=20)
+            nav = BeautifulSoup(url.text, "html5lib")
 
-        infoAction = getAllValuesFiis(nav, typeStock.upper())
-        print(f"Atualizando o fundo: {typeStock}")
+            infoAction = getAllValuesFiis(nav, typeStock.upper())
+            print(f"Atualizando o fundo: {typeStock}")
 
-    elif typeStock in etfs:
-        url = session.get(
-            f"https://statusinvest.com.br/etfs/{typeStock}")
-        nav = BeautifulSoup(url.text, "html5lib")
+        elif typeStock in etfs:
+            url = session.get(
+                f"https://statusinvest.com.br/etfs/{typeStock}", timeout=20)
+            nav = BeautifulSoup(url.text, "html5lib")
 
-        infoAction = getAllValuesEtfs(nav, typeStock.upper())
-        print(f"Atualizando o ETF: {typeStock}")
+            infoAction = getAllValuesEtfs(nav, typeStock.upper())
+            print(f"Atualizando o ETF: {typeStock}")
 
-    else:
-        url = session.get(
-            f"https://statusinvest.com.br/bdrs/{typeStock}")
-        nav = BeautifulSoup(url.text, "html5lib")
+        else:
+            url = session.get(
+                f"https://statusinvest.com.br/bdrs/{typeStock}", timeout=20)
+            nav = BeautifulSoup(url.text, "html5lib")
 
-        infoAction = getAllValuesBdrs(nav, typeStock.upper())
-        print(f"Atualizando o BDR: {typeStock}")
+            infoAction = getAllValuesBdrs(nav, typeStock.upper())
+            print(f"Atualizando o BDR: {typeStock}")
+    except Exception as e:
+        print(f"Erro ao atualizar {typeStock}: {e}")

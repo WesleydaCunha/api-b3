@@ -1,3 +1,4 @@
+import re
 import sqlite3
 import wikipedia
 from deep_translator import GoogleTranslator
@@ -10,8 +11,62 @@ except ImportError:
 infoAction = {}
 dataJson = {}
 
+
+def _value_by_title(soup, title: str, default=None):
+    """Retorna o <strong class=value> do bloco identificado pelo title."""
+    box = soup.find("div", attrs={"title": title})
+    if box is None:
+        return default
+    strong = box.find("strong", class_="value")
+    return strong.text.strip() if strong is not None else default
+
+
+def _nome_from_page(soup, ticker: str):
+    """Nome da empresa a partir da página (div de logotipo ou <title>)."""
+    m = re.search(r"Logotipo da empresa '([^']+)'", str(soup))
+    if m:
+        return m.group(1)
+    if soup.title and soup.title.text:
+        parts = soup.title.text.split(" - ")
+        if len(parts) >= 2:
+            return parts[-1].split(":")[0].strip()
+    return ticker.upper()
+
+
+def _extract_values(soup, with_dividends: bool = True):
+    """Extrai os indicadores do bloco 'top-info' (mesmo template para ações,
+    FIIs, ETFs e BDRs). Ausência de um bloco vira None (tratado em writeData)."""
+    infoAction["valor_cota"] = _value_by_title(soup, "Valor atual do ativo")
+    infoAction["preco_min_cota"] = _value_by_title(soup, "Valor mínimo das últimas 52 semanas")
+    infoAction["preco_max_cota"] = _value_by_title(soup, "Valor máximo das últimas 52 semanas")
+    infoAction["dy"] = (
+        _value_by_title(soup, "Dividend Yield com base nos últimos 12 meses")
+        if with_dividends else None
+    )
+
+    # Último pagamento de dividendos (soma dos proventos dos últimos 12 meses)
+    last_div = soup.find(
+        "div", attrs={"title": "Soma total de proventos distribuídos nos últimos 12 meses"})
+    if last_div is not None and with_dividends:
+        sub = last_div.find("span", class_="sub-value")
+        infoAction["ultimo_pagamento"] = sub.text.strip() if sub is not None else None
+    else:
+        infoAction["ultimo_pagamento"] = None
+
+    infoAction["valorizacaoCota"] = _value_by_title(
+        soup, "Valorização no preço do ativo com base nos últimos 12 meses")
+
+    # Variação diária: primeiro <b class=v-align-middle> da página
+    daily = soup.find("b", class_="v-align-middle")
+    infoAction["oscilacao_cota"] = daily.text.strip() if daily is not None else None
+
+    infoAction["cnpj"] = "none"
+    infoAction["linkSiteRi"] = "none"
+    return infoAction
+
+
 class BasicData():
-    def __init__(self, soup, ticker: str): 
+    def __init__(self, soup, ticker: str):
         self.soup = soup
         self.ticker = ticker
 
@@ -28,10 +83,7 @@ class BasicData():
             return "Nada encontrado...."
 
     def getDatasInternet(self):
-        try:
-            infoAction["nome"] = self.soup.find("small").text
-        except AttributeError:
-            pass
+        infoAction["nome"] = _nome_from_page(self.soup, self.ticker)
         infoAction["logo"] = self.getImage()
         infoAction["info"] = self.getInfoWikipedia()
         infoAction["ticker"] = self.ticker.upper()
@@ -78,15 +130,15 @@ class BasicData():
             infoAction["valorizacaoCota"] = 0.0
 
         try:
-            infoAction['preco_min_cota'] = float(str(infoAction["preco_min_cota"]).replace(",", "."))
-            infoAction['preco_max_cota'] = float(str(infoAction["preco_max_cota"]).replace(",", "."))
+            infoAction['preco_min_cota'] = float(str(infoAction["preco_min_cota"]).replace(",", ".").replace("R$ ", ""))
+            infoAction['preco_max_cota'] = float(str(infoAction["preco_max_cota"]).replace(",", ".").replace("R$ ", ""))
 
         except:
             infoAction["preco_min_cota"] = 0.0
             infoAction["preco_max_cota"] = 0.0
 
         try:
-            infoAction['ultimo_pagamento'] = float(str(infoAction["ultimo_pagamento"]).replace(",", ".").replace("R$ ", ""))
+            infoAction['ultimo_pagamento'] = float(str(infoAction["ultimo_pagamento"]).replace("R$ ", "").replace(".", "").replace(",", "."))
         except:
             infoAction['ultimo_pagamento'] = 0.0
 
@@ -96,7 +148,7 @@ class BasicData():
             infoAction['oscilacao_cota'] = 0.0
 
         try:
-            infoAction['valor_cota'] = float(str(infoAction["valor_cota"]).replace(",", "."))
+            infoAction['valor_cota'] = float(str(infoAction["valor_cota"]).replace("R$ ", "").replace(".", "").replace(",", "."))
         except:
             infoAction['valor_cota'] = 0.0
 
@@ -110,19 +162,10 @@ class BasicData():
         return infoAction
 
 #------------------------------------------
+# Extratores por categoria (mesmo bloco 'top-info' do StatusInvest)
 
 def getValuesMoneyBdrs(soup):
-    infoAction["preco_min_cota"] = soup.find_all("strong")[1].text
-    infoAction["preco_max_cota"] = soup.find_all("strong")[2].text
-    infoAction["ultimo_pagamento"] = soup.find_all("span")[33].text
-    infoAction["valor_cota"] = soup.find('strong').text
-    infoAction["dy"] = soup.find_all("strong")[3].text
-    infoAction["valorizacaoCota"] = soup.find_all("strong")[4].text
-    infoAction["oscilacao_cota"] = soup.find_all('b')[11].text.strip("\n").lstrip().rstrip()
-    infoAction["cnpj"] = "none"
-    infoAction["linkSiteRi"] = "none"
-
-    return infoAction
+    return _extract_values(soup)
 
 def getAllValuesBdrs(soup, ticker: str):
     comandBasics = BasicData(soup, ticker)
@@ -134,16 +177,7 @@ def getAllValuesBdrs(soup, ticker: str):
 #----------------------------------------
 
 def getValuesMoneyEtfs(soup):
-    infoAction["valor_cota"] = soup.find('strong').text
-    infoAction["dy"] = None
-    infoAction["oscilacao_cota"] = soup.find_all('b')[11].text.strip("\n").lstrip().rstrip()
-    infoAction["preco_min_cota"] = soup.find_all("strong")[1].text
-    infoAction["preco_max_cota"] = soup.find_all("strong")[2].text
-    infoAction["ultimo_pagamento"] = None
-    infoAction["cnpj"] = "none"
-    infoAction["linkSiteRi"] = "none"
-
-    return infoAction
+    return _extract_values(soup, with_dividends=False)
 
 def getAllValuesEtfs(soup, ticker: str):
     comandBasics = BasicData(soup, ticker)
@@ -155,35 +189,7 @@ def getAllValuesEtfs(soup, ticker: str):
 #-----------------------
 
 def getValuesMoneyStocks(soup):
-    try:
-        infoAction["dy"] = soup.find_all("strong")[3].text
-    except IndexError:
-        infoAction["dy"] = soup.find("strong")
-    except:
-        infoAction["dy"] = 0
-    infoAction["preco_min_cota"] = soup.find_all("strong")[1].text
-    infoAction["preco_max_cota"] = soup.find_all("strong")[2].text
-    infoAction["ultimo_pagamento"] = soup.find_all("span")[32].text
-    infoAction["valor_cota"] = soup.find('strong').text
-    infoAction["oscilacao_cota"] = soup.find_all('b')[11].text.strip("\n").lstrip().rstrip()
-    try:
-        infoAction["valorizacaoCota"] = soup.find_all("strong", attrs={"class": "value"})[4].text
-    except:
-        print(soup.find_all("strong", attrs={"class": "value"}))
-        infoAction["valorizacaoCota"] = 0.0
-    try:
-        infoAction["cnpj"] = soup.find_all("small", attrs={"class": "d-block fs-4 fw-100 lh-4"})[0].text
-    except:
-        print(soup.find_all("small", attrs={"class": "d-block fs-4 fw-100 lh-4"}))
-        infoAction["cnpj"] = None
-    try:
-        infoAction["linkSiteRi"] = soup.find_all("a", attrs={"rel": "noopener noreferrer nofollow", "class": "waves-effect waves-light btn btn-small btn-secondary"})[0]["href"]
-    except:
-        print(soup.find_all("a", attrs={"rel": "noopener noreferrer nofollow", "class": "waves-effect waves-light btn btn-small btn-secondary"}))
-        infoAction["linkSiteRi"] = None
-
-    return infoAction
-
+    return _extract_values(soup)
 
 def getAllValuesStocks(soup, ticker: str):
     comandBasics = BasicData(soup, ticker)
@@ -195,22 +201,7 @@ def getAllValuesStocks(soup, ticker: str):
 #-----------------------
 
 def getValuesMoneyFiis(soup):
-    infoAction["preco_min_cota"] = soup.find_all("strong")[1].text
-    infoAction["preco_max_cota"] = soup.find_all("strong")[2].text
-    infoAction["ultimo_pagamento"] = soup.find_all("span")[33].text
-    infoAction["valor_cota"] = soup.find('strong').text
-    infoAction["dy"] = soup.find_all("strong")[3].text
-    infoAction["oscilacao_cota"] = soup.find_all('b')[11].text.strip("\n").lstrip().rstrip()
-    infoAction["valorizacaoCota"] = soup.find_all("strong", attrs={"class": "value"})[4].text
-    infoAction["cnpj"] = soup.find_all("strong", attrs={"class": "value"})[28].text
-    a = soup.find_all("strong", attrs={"class": "value"})
-    i = 0
-    for x in a:
-        #print(f"{x} no index: {i}")
-        i = i+1
-    infoAction["linkSiteRi"] = "none"
-
-    return infoAction
+    return _extract_values(soup)
 
 def getAllValuesFiis(soup, ticker: str):
     comandBasics = BasicData(soup, ticker)

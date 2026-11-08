@@ -10,27 +10,29 @@ import os
 load_dotenv(".env")
 
 def updateCryptos():
-    connectionCrypto = ConnectionDBCryptoCurrencies()
+    try:
+        connectionCrypto = ConnectionDBCryptoCurrencies()
 
-    # Troque a chave de acesso pela sua. https://developers.coinranking.com/account/
-    response = requests.get("https://api.coinranking.com/v2/coins", params={'x-access-token': os.getenv("API_KEY")})
-    parsed = json.loads(response.text)
-    coins = parsed["data"]["coins"]
+        # Troque a chave de acesso pela sua. https://developers.coinranking.com/account/
+        response = requests.get("https://api.coinranking.com/v2/coins", params={'x-access-token': os.getenv("API_KEY")}, timeout=20)
+        parsed = json.loads(response.text)
+        coins = parsed["data"]["coins"]
 
-    for x in coins:
-        print(f"uuid: {x['uuid']}")
-        print(f"symbol: {x['symbol']}")
-        print(f"name: {x['name']}")
-        print(f"iconUrl: {x['iconUrl']}")
-        print(f"price: {x['price']}")
-        print(f"rank: {x['rank']}")
-        print(f"btcPrice: {x['btcPrice']} \n")
-        connectionCrypto.updateValues(x)
-        #Se for sua primeira vez executando, execute primeiro a inserção de dados na tabela
-        #connectionCrypto.addValues(x)
+        for x in coins:
+            x['price'] = float(x['price'])
+            x['marketCap'] = float(x['marketCap'])
+            x['change'] = float(x['change'])
+            x['lowVolume'] = int(float(x['lowVolume']))
+            x['btcPrice'] = float(x['btcPrice'])
 
-    connectionCrypto.db.commit()
-    connectionCrypto.db.close()
+            # Se for sua primeira vez executando, execute primeiro a inserção de dados na tabela
+            connectionCrypto.addValues(x)
+
+        connectionCrypto.db.commit()
+        connectionCrypto.db.close()
+        print(f"Cryptos atualizadas: {len(coins)}")
+    except Exception as e:
+        print(f"Erro ao atualizar cryptos (API_KEY válida?): {e}")
 
 def getValueCryptos():
     coins = ConnectionDBCryptoCurrencies().getValues()
