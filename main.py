@@ -5,6 +5,10 @@ from src.get_price_cryptocurrencies import getValueCryptos
 
 app = FastAPI(debug=False)
 
+@app.get("/")
+async def root():
+    return {"status": "ok"}
+
 infoAction = {"data": {}}
 
 @app.get("/get-ticker/{ticker}")

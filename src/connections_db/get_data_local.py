@@ -1,9 +1,47 @@
+import os
 import sqlite3
+
+try:
+    from src.connections_db.db import connect_db
+except ImportError:
+    from connections_db.db import connect_db
+
+os.makedirs("database", exist_ok=True)
+
+SCHEMA_DATA_STOCK = """
+CREATE TABLE IF NOT EXISTS dataStock(
+    nome text,
+    logo text,
+    info text,
+    ticker text,
+    dy number,
+    precoMinimoCotaEmUmAno number,
+    precoMaximoCotaEmUmAno number,
+    dividendoEmUmAno number,
+    oscilacaoCota number,
+    valorCota number,
+    linkSiteRi text,
+    valorizacaoCotaUmAno number,
+    cnpj text
+);
+"""
+
+
+def connect():
+    """Conecta no banco criando pasta e tabela se ainda não existirem."""
+    db = connect_db("./database/tickers.db")
+    db.execute(SCHEMA_DATA_STOCK)
+    db.commit()
+    return db
+
 
 class DataLocal():
     def getData(self, ticker: str):
-        db = sqlite3.connect("./database/tickers.db")
+        db = connect()
         data = db.execute(f"select * from dataStock where ticker='{ticker.upper()}'").fetchall()
+        db.close()
+        if not data:
+            return {"erro": f"Ticker '{ticker}' não encontrado"}
         # print(data[0])
         return {
             "nome": data[0][0],
@@ -22,8 +60,9 @@ class DataLocal():
         }
 
     def getOrderDatas(self, order: str):
-        db = sqlite3.connect("./database/tickers.db")
+        db = connect()
         datas = db.execute(f"select * from dataStock order by {order}").fetchall()
+        db.close()
         datasInJson = []
         for x in datas:
             if x[0] != "":

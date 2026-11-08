@@ -2,6 +2,11 @@ import sqlite3
 import wikipedia
 from deep_translator import GoogleTranslator
 
+try:
+    from src.connections_db.db import connect_db
+except ImportError:
+    from connections_db.db import connect_db
+
 infoAction = {}
 dataJson = {}
 
@@ -61,7 +66,7 @@ class BasicData():
 
 
     def writeData(self, infoAction):
-        db = sqlite3.connect("./database/tickers.db")
+        db = connect_db("./database/tickers.db")
         try:
             infoAction["dy"] = float(str(infoAction["dy"]).replace(",", "."))
         except:

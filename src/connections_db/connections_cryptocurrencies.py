@@ -1,11 +1,40 @@
+import os
 import sqlite3
+
+try:
+    from src.connections_db.db import connect_db
+except ImportError:
+    from connections_db.db import connect_db
+
+os.makedirs("database", exist_ok=True)
+
+SCHEMA_CRYPTOS = """
+CREATE TABLE IF NOT EXISTS cryptos(
+    uuid text,
+    symbol text,
+    name text,
+    color text,
+    iconUrl text,
+    marketCap number,
+    price number,
+    change number,
+    rank number,
+    lowVolume number,
+    coinrankingUrl text,
+    volume number,
+    btcPrice number
+);
+"""
+
 
 class ConnectionDBCryptoCurrencies():
     def __init__(self):
-        self.db = sqlite3.connect("database/cryptos.db")
+        self.db = connect_db("database/cryptos.db")
+        self.db.execute(SCHEMA_CRYPTOS)
+        self.db.commit()
 
     def createTable(self):
-        self.db.execute("create table cryptos(uuid text, symbol text, name text, color text, iconUrl text, marketCap number, price number, change number, rank number, lowVolume number, coinrankingUrl text, volume number, btcPrice number);")
+        self.db.execute(SCHEMA_CRYPTOS)
         self.db.commit()
 
     def updateValues(self, x: object):

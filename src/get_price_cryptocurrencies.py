@@ -1,6 +1,9 @@
 import json
 import requests
-from src.connections_db.connections_cryptocurrencies import ConnectionDBCryptoCurrencies
+try:
+    from src.connections_db.connections_cryptocurrencies import ConnectionDBCryptoCurrencies
+except ImportError:
+    from connections_db.connections_cryptocurrencies import ConnectionDBCryptoCurrencies
 from dotenv import load_dotenv
 import os
 

@@ -1,8 +1,15 @@
-import sqlite3
-from connections_db.connections_cryptocurrencies import ConnectionDBCryptoCurrencies
+"""Cria (se ainda não existirem) os bancos SQLite em ./database.
 
-dbTickers = sqlite3.connect("database/tickers.db")
-dbTickers.execute("create table dataStock(nome text, logo text, info text, ticker text, dy number, precoMinimoCotaEmUmAno number, precoMaximoCotaEmUmAno number, dividendoEmUmAno number, oscilacaoCota number, valorCota number ,linkSiteRi text, valorizacaoCotaUmAno number, cnpj text);")
-dbTickers.commit()
+Uso: python -m src.connections_db.create_database
+"""
+import os
 
-ConnectionDBCryptoCurrencies().createTable()
+os.makedirs("database", exist_ok=True)
+
+from src.connections_db.get_data_local import connect as connect_tickers
+from src.connections_db.connections_cryptocurrencies import ConnectionDBCryptoCurrencies
+
+connect_tickers().close()
+ConnectionDBCryptoCurrencies().db.close()
+
+print("Bancos criados em ./database (tickers.db e cryptos.db)")

@@ -27,3 +27,26 @@ Projeto com deploy no <a href="https://heroku.com">Heroku</a>, na url: <a href="
 
 <img src="https://img.shields.io/github/stars/ramonpaolo/api-b3" alt="Stars"/> <img src="https://img.shields.io/github/license/ramonpaolo/api-b3?color=2b9348" alt="License"/>
 ![GitHub repo size](https://img.shields.io/github/repo-size/ramonpaolo/api-b3) ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/flask) ![GitHub top language](https://img.shields.io/github/languages/top/ramonpaolo/api-b3)
+
+### Banco de dados (Turso)
+O app usa SQLite local (`database/*.db`) quando `TURSO_DATABASE_URL` e `TURSO_AUTH_TOKEN` **não** estão definidas. Quando definidas, usa o [Turso](https://turso.tech/) (SQLite na nuvem, persistente) — recomendado para o deploy no Render, onde o disco local é temporário e os dados seriam perdidos a cada deploy.
+
+```bash
+# 1. Instale o Turso CLI (https://docs.turso.tech/quickstart)
+# 2. Crie o banco e o token
+turso db create api-b3 --tursodb
+turso db tokens create api-b3
+```
+
+Depois configure em **Render → Settings → Environment** (e no `.env` local):
+- `TURSO_DATABASE_URL` (ex.: `libsql://api-b3.seu-usuario.turso.io`)
+- `TURSO_AUTH_TOKEN`
+
+Veja o `.env.example` na raiz. As tabelas são criadas automaticamente pelo app (`CREATE TABLE IF NOT EXISTS`) quando o banco está vazio.
+
+### Povoando os dados
+```bash
+cd src
+python updateValues.py
+```
+Faz o scraping dos tickers (StatusInvest) e das cryptos (CoinRanking, exige `API_KEY`). Com as variáveis do Turso configuradas, os dados vão direto para o banco na nuvem.
