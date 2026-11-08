@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 import uvicorn
-from src.get_data_local import DataLocal
+from src.connections_db.get_data_local import DataLocal
 from src.get_price_cryptocurrencies import getValueCryptos
 
 app = FastAPI(debug=False)
@@ -27,4 +27,5 @@ async def getStocksByOrder(order: str):
 async def getCryptos():
     return {"result": getValueCryptos()}
 
-uvicorn.run(app, host="localhost", port=8000)
+if __name__ == "__main__":
+    uvicorn.run(app, host="localhost", port=8000)

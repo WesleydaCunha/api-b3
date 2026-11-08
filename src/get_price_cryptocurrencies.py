@@ -1,6 +1,6 @@
 import json
 import requests
-from connections_db.connections_cryptocurrencies import ConnectionDBCryptoCurrencies
+from src.connections_db.connections_cryptocurrencies import ConnectionDBCryptoCurrencies
 from dotenv import load_dotenv
 import os
 
