@@ -44,7 +44,18 @@ Depois configure em **Render → Settings → Environment** (e no `.env` local):
 
 Veja o `.env.example` na raiz. As tabelas são criadas automaticamente pelo app (`CREATE TABLE IF NOT EXISTS`) quando o banco está vazio.
 
-### Povoando os dados
-- **Rápido (exemplos):** `python seed_sample.py` (rodar da raiz). Insere alguns tickers/cryptos de exemplo para validar os endpoints, sem raspar a web.
-- **Completo (scraping real):** `cd src && python updateValues.py` — faz o scraping completo no StatusInvest e CoinRanking (precisa das variáveis `TURSO_*` e `API_KEY` no `.env`; pode levar alguns minutos pois visita centenas de páginas).
-- Com as variáveis do Turso configuradas, os dados vão direto para o banco na nuvem.
+### Povoando os dados (automático, sem rodar nada local)
+O workflow **Seed B3 data** (`.github/workflows/seed.yml`) popula o Turso executando
+`src/updateValues.py`, automaticamente em dias úteis às 12h UTC e manualmente pela
+aba **Actions** do GitHub (botão "Run workflow").
+
+**Configuração (uma única vez):** em **GitHub → Settings → Secrets and variables →
+Actions → New repository secret**, cadastre:
+- `TURSO_DATABASE_URL`
+- `TURSO_AUTH_TOKEN`
+- `API_KEY` (opcional — sem ela, as cryptos não são atualizadas, mas os
+  tickers de B3 são normalmente)
+
+Depois rode uma vez pela aba **Actions** para popular na hora; após isso o cron
+mantém os dados atualizados sozinho. O scraping visita ~1000 páginas, então a
+primeira carga demora alguns minutos.

@@ -118,6 +118,10 @@ class BasicData():
 
 
     def writeData(self, infoAction):
+        if infoAction.get("valor_cota") is None:
+            raise ValueError(
+                f"Indicadores não encontrados para {self.ticker} "
+                "(página bloqueada pelo Cloudflare ou layout alterado)")
         db = connect_db("./database/tickers.db")
         try:
             infoAction["dy"] = float(str(infoAction["dy"]).replace(",", "."))

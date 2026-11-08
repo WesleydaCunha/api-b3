@@ -1,11 +1,14 @@
 import numpy
+import time
 from get_price_cryptocurrencies import updateCryptos
 from lists import fiis, bdrs, stocks, etfs
 import requests
+import cloudscraper
 from bs4 import BeautifulSoup
 from get_data_internet import getAllValuesFiis, getAllValuesStocks, getAllValuesEtfs, getAllValuesBdrs
 
-session = requests.Session()
+# cloudscraper resolve o desafio JS do Cloudflare (requests puro retorna 403)
+session = cloudscraper.create_scraper()
 session.headers.update({"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"})
 
 totalLengthStocks = len(stocks) + len(fiis) + len(bdrs) + len(etfs)
@@ -54,3 +57,4 @@ for x in range(1, totalLengthStocks):
             print(f"Atualizando o BDR: {typeStock}")
     except Exception as e:
         print(f"Erro ao atualizar {typeStock}: {e}")
+    time.sleep(0.5)
